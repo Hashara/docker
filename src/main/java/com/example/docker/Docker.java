@@ -32,6 +32,23 @@ public class Docker {
             .getInstance(config)
             .build();
 
+//    InvocationBuilder.AsyncResultCallback<Statistics> callback = new InvocationBuilder.AsyncResultCallback<>();
+//        dockerClient.("38490a3d6d60daf432bb76aa6f6f47896bdf99b3ed7497586d9d9c9785cbce0c").exec(callback);
+//    Statistics stats = null;
+//        try {
+//        stats = callback.awaitResult();
+//        callback.close();
+//        System.out.println(stats.getCpuStats());
+//        System.out.println(stats.getPidsStats());
+//        System.out.println(stats.getMemoryStats().getUsage());
+//        System.out.println(stats.toString());
+////        return "";
+//    } catch (RuntimeException | IOException e) {
+//        // you may want to throw an exception here
+//        System.out.println("error");
+////        return "Err";
+//    }
+
 
     @RequestMapping("/getallcontainers")
     public @ResponseBody String getAllContainers(){
@@ -325,7 +342,7 @@ public class Docker {
         try {
             stats = callback.awaitResult();
             callback.close();
-            System.out.println(stats.getCpuStats());
+            //System.out.println(stats.getCpuStats());
             CpuStatsConfig cpustat = stats.getCpuStats();
             CpuUsageConfig cpuUsageConfig = cpustat.getCpuUsage();
             String returnString = "Total usage= " + cpuUsageConfig.getTotalUsage().toString()
@@ -340,6 +357,42 @@ public class Docker {
         }
 //        return stats; // this may be null or invalid if the container has terminated
     }
+
+
+
+    @RequestMapping("diffrenececpuusage/{id}")
+    public @ResponseBody String preCpu(@PathVariable String id) {
+        System.out.println(id);
+        InvocationBuilder.AsyncResultCallback<Statistics> callback = new InvocationBuilder.AsyncResultCallback<>();
+        dockerClient.statsCmd(id).exec(callback);
+        Statistics stats = null;
+        try {
+            stats = callback.awaitResult();
+            callback.close();
+            CpuStatsConfig cpustat = stats.getCpuStats();
+            CpuStatsConfig precpu = stats.getPreCpuStats();
+
+            CpuUsageConfig precpuusage = precpu.getCpuUsage();
+            CpuUsageConfig cpuusage = cpustat.getCpuUsage();
+
+//            Long diff = cpuusage.getTotalUsage() - precpuusage.getTotalUsage();
+            System.out.println(cpuusage.getTotalUsage() - precpuusage.getTotalUsage());
+//            CpuUsageConfig cpuUsageConfig = cpustat.getCpuUsage();
+//            String returnString = "Total usage= " + cpuUsageConfig.getTotalUsage().toString()
+//                    + "   Kernel mode usage = " + cpuUsageConfig.getUsageInKernelmode()
+//                    + "   User mode usage =  " + cpuUsageConfig.getUsageInUsermode();
+//            System.out.println(stats.toString());
+            return "";
+        } catch (RuntimeException | IOException e) {
+            // you may want to throw an exception here
+            System.out.println("error");
+            return "Err";
+        }
+//        return stats; // this may be null or invalid if the container has terminated
+    }
+
+
+
 
 
     //memory statics
@@ -371,4 +424,7 @@ public class Docker {
         }
 //        return stats; // this may be null or invalid if the container has terminated
     }
+
+
+
 }
