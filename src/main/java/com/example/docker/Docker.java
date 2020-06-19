@@ -279,11 +279,11 @@ public class Docker {
     public @ResponseBody String inspectVolume(@PathVariable String id){
         try{
             InspectVolumeResponse volume
-                    = dockerClient.inspectVolumeCmd(id).exec();
+                    = dockerClient.inspectVolumeCmd("cd5e43ccac13e5a52422a597b0624bf44ba87e5006fca1f35076990c80d95149 ").exec();
 //            System.out.println(container.getHostsPath());
 //            System.out.println(container.getName());
 //            System.out.println(container.getDriver());
-            String returnString = "Name" + volume.getName();
+            String returnString = "Name" + volume.getName() + " " + volume.toString();
             return returnString;
         }
         catch (Exception e){
@@ -294,7 +294,57 @@ public class Docker {
 
     //cpu usage
     @RequestMapping("cpuusage/{id}")
-    public void getNextStatistics(@PathVariable String id) {
+    public @ResponseBody String getNextStatistics(@PathVariable String id) {
+        System.out.println(id);
+        InvocationBuilder.AsyncResultCallback<Statistics> callback = new InvocationBuilder.AsyncResultCallback<>();
+        dockerClient.statsCmd(id).exec(callback);
+        Statistics stats = null;
+        try {
+            stats = callback.awaitResult();
+            callback.close();
+            System.out.println(stats.getCpuStats());
+            System.out.println(stats.getPidsStats());
+            System.out.println(stats.getMemoryStats().getUsage());
+            System.out.println(stats.toString());
+            return "";
+        } catch (RuntimeException | IOException e) {
+            // you may want to throw an exception here
+            System.out.println("error");
+            return "Err";
+        }
+//        return stats; // this may be null or invalid if the container has terminated
+    }
+
+
+    @RequestMapping("cpustatics/{id}")
+    public @ResponseBody String getCPUStatistics(@PathVariable String id) {
+        System.out.println(id);
+        InvocationBuilder.AsyncResultCallback<Statistics> callback = new InvocationBuilder.AsyncResultCallback<>();
+        dockerClient.statsCmd(id).exec(callback);
+        Statistics stats = null;
+        try {
+            stats = callback.awaitResult();
+            callback.close();
+            System.out.println(stats.getCpuStats());
+            CpuStatsConfig cpustat = stats.getCpuStats();
+            CpuUsageConfig cpuUsageConfig = cpustat.getCpuUsage();
+            String returnString = "Total usage= " + cpuUsageConfig.getTotalUsage().toString()
+                    + "   Kernel mode usage = " + cpuUsageConfig.getUsageInKernelmode()
+                    + "   User mode usage =  " + cpuUsageConfig.getUsageInUsermode();
+//            System.out.println(stats.toString());
+            return returnString;
+        } catch (RuntimeException | IOException e) {
+            // you may want to throw an exception here
+            System.out.println("error");
+            return "Err";
+        }
+//        return stats; // this may be null or invalid if the container has terminated
+    }
+
+
+    //memory statics
+    @RequestMapping("memorystatics/{id}")
+    public @ResponseBody String getMemoryStatistics(@PathVariable String id) {
         System.out.println(id);
         InvocationBuilder.AsyncResultCallback<Statistics> callback = new InvocationBuilder.AsyncResultCallback<>();
         dockerClient.statsCmd(id).exec(callback);
@@ -304,11 +354,20 @@ public class Docker {
             callback.close();
 //            System.out.println(stats.getCpuStats());
 //            System.out.println(stats.getPidsStats());
-            System.out.println(stats.toString());
-//            return stats;
+            String memoryString = "";
+
+            System.out.println(stats.getMemoryStats().getUsage());
+//            System.out.println(stats.toString());
+            MemoryStatsConfig mem = stats.getMemoryStats();
+            memoryString += "Usage=" + mem.getUsage().toString() + "   Limit= " + mem.getLimit().toString();
+            Long m = stats.getMemoryStats().getUsage();
+
+
+            return memoryString;
         } catch (RuntimeException | IOException e) {
             // you may want to throw an exception here
             System.out.println("error");
+            return "Err";
         }
 //        return stats; // this may be null or invalid if the container has terminated
     }
